@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Interview Scheduler — Upload Resume</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', sans-serif; background: #f0f4f8; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+    .card { background: #fff; border-radius: 12px; padding: 40px; width: 100%; max-width: 480px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+    h1 { font-size: 1.6rem; color: #1a202c; margin-bottom: 8px; }
+    p.sub { color: #718096; margin-bottom: 28px; font-size: 0.95rem; }
+    label { display: block; font-weight: 600; color: #2d3748; margin-bottom: 8px; }
+    .drop-zone { border: 2px dashed #cbd5e0; border-radius: 8px; padding: 40px; text-align: center; cursor: pointer; transition: all 0.2s; color: #a0aec0; }
+    .drop-zone:hover, .drop-zone.dragover { border-color: #4299e1; color: #4299e1; background: #ebf8ff; }
+    .drop-zone input { display: none; }
+    .drop-zone .icon { font-size: 2.5rem; margin-bottom: 10px; }
+    #file-name { margin-top: 12px; font-size: 0.9rem; color: #4a5568; }
+    button { width: 100%; margin-top: 24px; padding: 14px; background: #4299e1; color: #fff; border: none; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: background 0.2s; }
+    button:hover { background: #3182ce; }
+    button:disabled { background: #a0aec0; cursor: not-allowed; }
+    #status { margin-top: 16px; padding: 12px; border-radius: 8px; font-size: 0.9rem; display: none; }
+    #status.success { background: #c6f6d5; color: #276749; }
+    #status.error { background: #fed7d7; color: #9b2335; }
+    .admin-link { text-align: center; margin-top: 20px; }
+    .admin-link a { color: #4299e1; font-size: 0.88rem; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>📋 Submit Your Resume</h1>
+    <p class="sub">Upload your PDF resume and we'll take it from here.</p>
+    <form id="upload-form">
+      <label>Resume (PDF, max 5MB)</label>
+      <div class="drop-zone" id="drop-zone">
+        <div class="icon">📄</div>
+        <div>Drag & drop your PDF here or <strong>click to browse</strong></div>
+        <input type="file" id="resume" name="resume" accept=".pdf" />
+      </div>
+      <div id="file-name"></div>
+      <button type="submit" id="submit-btn" disabled>Submit Application</button>
+    </form>
+    <div id="status"></div>
+    <div class="admin-link"><a href="/admin.html">Admin Panel →</a></div>
+  </div>
+  <script>
+    const dropZone = document.getElementById('drop-zone');
+    const input = document.getElementById('resume');
+    const fileName = document.getElementById('file-name');
+    const submitBtn = document.getElementById('submit-btn');
+    const status = document.getElementById('status');
+
+    dropZone.addEventListener('click', () => input.click());
+    dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+    dropZone.addEventListener('drop', e => {
+      e.preventDefault(); dropZone.classList.remove('dragover');
+      if (e.dataTransfer.files[0]) { input.files = e.dataTransfer.files; updateFileName(); }
+    });
+    input.addEventListener('change', updateFileName);
+
+    function updateFileName() {
+      const file = input.files[0];
+      if (file) { fileName.textContent = '✅ ' + file.name; submitBtn.disabled = false; }
+    }
+
+    document.getElementById('upload-form').addEventListener('submit', async e => {
+      e.preventDefault();
+      submitBtn.disabled = true; submitBtn.textContent = 'Submitting...';
+      status.style.display = 'none';
+      const fd = new FormData();
+      fd.append('resume', input.files[0]);
+      try {
+        const res = await fetch('/api/applications', { method: 'POST', body: fd });
+        const data = await res.json();
+        status.style.display = 'block';
+        if (res.ok) { status.className = 'success'; status.textContent = '✅ ' + data.message; }
+        else { status.className = 'error'; status.textContent = '❌ ' + data.error; submitBtn.disabled = false; }
+      } catch { status.style.display = 'block'; status.className = 'error'; status.textContent = '❌ Server error. Try again.'; submitBtn.disabled = false; }
+      submitBtn.textContent = 'Submit Application';
+    });
+  </script>
+</body>
+</html>

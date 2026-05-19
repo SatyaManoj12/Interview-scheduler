@@ -1,19 +1,24 @@
 const nodemailer = require('nodemailer');
-require('dotenv').config();
 
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.GMAIL_USER,
-    pass: process.env.GMAIL_APP_PASSWORD,
-  },
-});
+function createTransporter() {
+  if (!process.env.GMAIL_USER || !process.env.GMAIL_APP_PASSWORD) {
+    throw new Error('Gmail credentials not configured. Set GMAIL_USER and GMAIL_APP_PASSWORD in .env');
+  }
+  return nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: process.env.GMAIL_USER,
+      pass: process.env.GMAIL_APP_PASSWORD,
+    },
+  });
+}
 
 async function sendInterviewerRequest(interviewer, candidate, application) {
   const base = process.env.BASE_URL;
   const acceptUrl = `${base}/api/respond?token=${application.token}&action=accept`;
   const rejectUrl = `${base}/api/respond?token=${application.token}&action=reject`;
 
+  const transporter = createTransporter();
   await transporter.sendMail({
     from: `"Interview Bot" <${process.env.GMAIL_USER}>`,
     to: interviewer.email,
@@ -30,6 +35,7 @@ async function sendInterviewerRequest(interviewer, candidate, application) {
 }
 
 async function sendCandidateConfirmation(candidate, interviewer, meetLink) {
+  const transporter = createTransporter();
   await transporter.sendMail({
     from: `"Interview Bot" <${process.env.GMAIL_USER}>`,
     to: candidate.email,

@@ -13,10 +13,17 @@ async function extractCandidateInfo(filePath) {
 
   let text = '';
   try {
-    const data = await pdfParse(buffer);
+    const data = await pdfParse(buffer, { max: 3 });
     text = data.text || '';
   } catch (err) {
+    if (err.message && err.message.includes('encrypted')) {
+      throw new Error('This PDF is password-protected. Please upload an unprotected PDF.');
+    }
     throw new Error('Failed to parse PDF: ' + err.message);
+  }
+
+  if (!text.trim()) {
+    throw new Error('No readable text found in PDF. Please upload a text-based (not scanned) PDF.');
   }
 
   const emailMatch = text.match(/[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/);

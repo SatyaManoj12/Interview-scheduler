@@ -51,9 +51,9 @@ router.get('/', async (req, res) => {
     saveApplications(applications);
 
     return res.send(page('Accepted!', `
-      ✅ <strong>Thank you!</strong> You have accepted the interview request for <strong>${app.candidate.name}</strong>.<br><br>
+      ✅ <strong>Thank you!</strong> You have accepted the interview request for <strong>${escapeHtml(app.candidate.name)}</strong>.<br><br>
       A Google Meet link has been sent to the candidate.<br>
-      <strong>Meet Link:</strong> <a href="${meetLink}">${meetLink}</a>
+      <strong>Meet Link:</strong> <a href="${escapeHtml(meetLink)}">${escapeHtml(meetLink)}</a>
     `));
   }
 
@@ -92,6 +92,10 @@ router.get('/', async (req, res) => {
     return res.send(page('Rejected', '❌ You have rejected the request. The next interviewer has been notified.'));
   }
 });
+
+function escapeHtml(str) {
+  return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
 
 function page(title, body) {
   return `<!DOCTYPE html>
